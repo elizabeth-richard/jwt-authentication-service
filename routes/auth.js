@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { User, getUserByLogin } from "../models/user.js";
 import { generateToken } from "../util/hash.js";
+import middleware from "../middleware/index.js";
 
 const router = Router();
 
@@ -50,6 +51,22 @@ router.post("/login", async (req, res) => {
 		res.json({ token, user });
 	} catch (error) {
 		console.error("Login error:", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
+});
+
+// Return the user info
+router.get("/me", middleware, async (req, res) => {
+	try {
+		const user = await User.findByPk(req.user.id);
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+		const userData = user.get({ plain: true });
+		delete userData.password;
+		res.json(userData);
+	} catch (error) {
+		console.error("Me error:", error);
 		res.status(500).json({ error: "Internal server error" });
 	}
 });
